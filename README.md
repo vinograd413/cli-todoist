@@ -26,7 +26,7 @@ Add, list, update, and delete your todos right from your terminal, with persiste
    cd cli_todoist
 2. Build the app:**
    ```sh
-   go build -o cli_todoist
+   go build -o cli_todoist ./cmd/cli_todoist
    ```
 
 3. **Run the app:**
