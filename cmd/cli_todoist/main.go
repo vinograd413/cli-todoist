@@ -2,7 +2,7 @@ package main
 
 import (
 	"cliTodoist/cli"
-	"cliTodoist/internal/util"
+	"cliTodoist/internal/input"
 	"fmt"
 	"os"
 	"syscall"
@@ -15,7 +15,7 @@ func main() {
 		t.Close()
 	}()
 
-	input := util.NewTerminalInput(t)
+	input := input.NewTerminalInput(t)
 	cli := cli.CLI{Input: input}
 	err := cli.Run()
 	if err != nil {

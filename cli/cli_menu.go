@@ -2,6 +2,7 @@ package cli
 
 import (
 	"cliTodoist/colors"
+	"cliTodoist/internal/input"
 	"cliTodoist/internal/util"
 	"errors"
 	"fmt"
@@ -40,7 +41,7 @@ func (m *Menu) AddItem(text string, id string, subMenu *Menu) *MenuItem {
 	return menuItem
 }
 
-func (m *Menu) Display(input util.Input) (string, error) {
+func (m *Menu) Display(input input.Input) (string, error) {
 	if len(m.MenuItems) == 0 {
 		return "", ErrNoMenuItems
 	}
@@ -48,8 +49,10 @@ func (m *Menu) Display(input util.Input) (string, error) {
 	defer func() {
 		fmt.Print(util.ShowCursor)
 	}()
+
 	ClearScreen()
 	fmt.Print(m.Prompt)
+
 	m.renderMenu(false)
 
 	for {

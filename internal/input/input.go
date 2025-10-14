@@ -1,4 +1,4 @@
-package util
+package input
 
 import (
 	"bufio"
@@ -18,6 +18,7 @@ type Input interface {
 	// RestoreMode return terminal into standard mode
 	RestoreMode(*term.State) error
 	Fd() int
+	File() *os.File
 }
 
 type TerminalInput struct {
@@ -51,6 +52,10 @@ func (ti *TerminalInput) ReadKey() (byte, error) {
 
 func (ti *TerminalInput) Fd() int {
 	return int(ti.file.Fd())
+}
+
+func (ti *TerminalInput) File() *os.File {
+	return ti.file
 }
 
 func (ti *TerminalInput) SetRawMode() (*term.State, error) {

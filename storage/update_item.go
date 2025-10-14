@@ -2,18 +2,18 @@ package storage
 
 import (
 	"cliTodoist/colors"
+	"cliTodoist/internal/input"
 	"cliTodoist/internal/util"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"go.etcd.io/bbolt"
 )
 
-func (d *DB) UpdateItem(i util.Input) (string, error) {
+func (d *DB) UpdateItem(i input.Input) (string, error) {
 	var input string
 	var empty bool = false
 	var numToDelete int
@@ -21,26 +21,12 @@ func (d *DB) UpdateItem(i util.Input) (string, error) {
 
 	util.ClearScreenPlain()
 
-	var listOfTasks []*Task
-	d.db.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte(tasksBucket))
-		if b == nil {
-			return errors.New("Bucket does not exists")
-		}
+	table, listOfTasks, err := d.ListAllTasks(i)
+	if err != nil {
+		return "", err
+	}
 
-		b.ForEach(func(k, v []byte) error {
-			var t Task
-			json.Unmarshal(v, &t)
-
-			if !t.IsDeleted {
-				listOfTasks = append(listOfTasks, &t)
-			}
-			return nil
-		})
-		return nil
-	})
-
-	if len(listOfTasks) == 0 {
+	if len(listOfTasks) == 0 || table == nil {
 		fmt.Print(util.HideCursor)
 		fmt.Println(colors.Red + "    There is no open tasks, nothing to Update yet!" + colors.Reset + "\n")
 		util.WaitForAnyKey(i, colors.Yellow+"Hit Any button to return to Menu"+colors.Reset)
@@ -48,11 +34,9 @@ func (d *DB) UpdateItem(i util.Input) (string, error) {
 		return "", nil
 	} else {
 		fmt.Println(colors.Yellow + colors.Bold + "Which task you want to update?" + colors.Reset)
-		fmt.Println(colors.Yellow + colors.Bold + "Print 'e' to navigate back to Menu" + colors.Reset)
+		fmt.Println(colors.Gray + "Print" + colors.Yellow + " 'e' " + colors.Gray + "to navigate back to Menu\n" + colors.Reset)
 		fmt.Println(colors.Yellow + colors.Bold + "Open tasks:" + colors.Reset)
-		for n, t := range listOfTasks {
-			fmt.Printf("    %d. %s	Created at: %v\n", n+1, t.Text, time.Unix(t.CreatedAt, 0).Format("2006-01-02 15:04:05"))
-		}
+		table.Render()
 	}
 
 	for {
@@ -141,7 +125,7 @@ func (d *DB) UpdateItem(i util.Input) (string, error) {
 
 	taskToUpdate.Text = input
 
-	err := d.db.Update(func(tx *bbolt.Tx) error {
+	err = d.db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket([]byte(tasksBucket))
 		if b == nil {
 			return errors.New("Bucket does not exists")

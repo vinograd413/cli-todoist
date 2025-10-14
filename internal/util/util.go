@@ -1,6 +1,7 @@
 package util
 
 import (
+	"cliTodoist/internal/input"
 	"fmt"
 )
 
@@ -14,7 +15,7 @@ func ClearScreenPlain() {
 	fmt.Print(ClearNotHide)
 }
 
-func WaitForAnyKey(input Input, prompt string) {
+func WaitForAnyKey(input input.Input, prompt string) {
 	state, _ := input.SetRawMode()
 	fmt.Print(prompt)
 	input.ReadKey()

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"cliTodoist/colors"
+	"cliTodoist/internal/input"
 	"cliTodoist/internal/util"
 	"cliTodoist/storage"
 	"crypto/sha256"
@@ -16,7 +17,7 @@ import (
 
 // main cli structure that holds and run a programm
 type CLI struct {
-	Input util.Input
+	Input input.Input
 }
 
 func (cli *CLI) validateArgs() {
@@ -27,11 +28,6 @@ func (cli *CLI) validateArgs() {
 }
 
 func (cli *CLI) Run() error {
-	// reader := bufio.NewReader(os.Stdin)
-	// scanner := bufio.NewScanner(os.Stdin)
-
-	// Set terminal to raw mode
-
 	db, err := storage.NewDB()
 	if err != nil {
 		return err
@@ -67,7 +63,7 @@ func (cli *CLI) Run() error {
 	}
 }
 
-func ShowMenu(m *Menu, db *storage.DB, input util.Input) error {
+func ShowMenu(m *Menu, db *storage.DB, input input.Input) error {
 
 	oldState, err := input.SetRawMode()
 	if err != nil {
@@ -120,7 +116,7 @@ func ShowMenu(m *Menu, db *storage.DB, input util.Input) error {
 			}
 		}
 	case StringToID("List all task"):
-		db.ListAllItems(input)
+		db.ShowAllItems(input)
 	case "exit":
 		return errors.New("Exit error")
 	}

@@ -2,7 +2,9 @@ package storage
 
 import (
 	"cliTodoist/colors"
+	"cliTodoist/internal/input"
 	"cliTodoist/internal/util"
+
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -12,7 +14,7 @@ import (
 
 const minHeaderLen = 3
 
-func (d *DB) AddItem(i util.Input) (string, error) {
+func (d *DB) AddItem(i input.Input) (string, error) {
 	var task *Task
 	var input string
 
