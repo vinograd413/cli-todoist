@@ -5,6 +5,7 @@ go 1.24.0
 require golang.org/x/term v0.34.0 // direct
 
 require (
+	github.com/aquasecurity/table v1.11.0 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect

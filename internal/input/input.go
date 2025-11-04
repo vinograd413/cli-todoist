@@ -17,7 +17,9 @@ type Input interface {
 	SetRawMode() (*term.State, error)
 	// RestoreMode return terminal into standard mode
 	RestoreMode(*term.State) error
+	// Fd return file descriptor reference
 	Fd() int
+	//File return file descriptor
 	File() *os.File
 }
 

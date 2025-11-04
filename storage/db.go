@@ -2,14 +2,15 @@ package storage
 
 import (
 	"cliTodoist/internal/input"
+	"cliTodoist/internal/table"
+	"cliTodoist/internal/util"
 	"encoding/json"
 	"errors"
 	"log"
-	"slices"
+	"os"
 	"strconv"
 	"time"
 
-	"github.com/olekukonko/tablewriter"
 	"go.etcd.io/bbolt"
 )
 
@@ -28,7 +29,7 @@ func NewDB() (*DB, error) {
 	return &DB{db}, err
 }
 
-func (d *DB) ListAllTasks(input input.Input) (*tablewriter.Table, []*Task, error) {
+func (d *DB) GetAllTasks(input input.Input) ([]*Task, error) {
 	var listOfTasks []*Task
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		b := tx.Bucket([]byte(tasksBucket))
@@ -49,37 +50,29 @@ func (d *DB) ListAllTasks(input input.Input) (*tablewriter.Table, []*Task, error
 	})
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-
-	table := tablewriter.NewWriter(input.File())
-	table.Header([]string{"#", "Text", "Created At", "Completed", "Completed At"})
 
 	SortTasksByCreatedAt(listOfTasks)
 
-	for i, t := range listOfTasks {
+	return listOfTasks, nil
+
+}
+
+func PrintTasksAsTable(file *os.File, renderer table.TableRenderer, tasks []*Task) error {
+	header := []string{"#", "Text", "Created At", "Completed", "Completed At"}
+	var rows [][]string
+	for i, t := range tasks {
 		var row []string
 		row = append(row, strconv.Itoa(i+1))
 		row = append(row, t.Text)
 		row = append(row, time.Unix(t.CreatedAt, 0).Format(time.RFC1123))
 		if !t.IsComleted {
-			row = append(row, "")
+			row = append(row, util.SymbGreenCross)
 			row = append(row, "")
 		}
-		table.Append(row)
+		rows = append(rows, row)
 	}
 
-	return table, listOfTasks, nil
-}
-
-func SortTasksByCreatedAt(tasks []*Task) {
-	slices.SortStableFunc(tasks, func(a, b *Task) int {
-		if a.CreatedAt < b.CreatedAt {
-			return -1
-		}
-		if a.CreatedAt > b.CreatedAt {
-			return 1
-		}
-		return 0
-	})
+	return renderer.RenderTable(file, header, rows)
 }

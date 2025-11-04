@@ -3,6 +3,7 @@ package storage
 import (
 	"cliTodoist/colors"
 	"cliTodoist/internal/input"
+	"cliTodoist/internal/table"
 	"cliTodoist/internal/util"
 	"encoding/json"
 	"errors"
@@ -18,15 +19,16 @@ func (d *DB) DeleteItem(i input.Input) (string, error) {
 	var err error
 	var empty bool = false
 	var numbersToDelete []int
+	renderer := table.TableWriterRenderer{}
 
 	util.ClearScreenPlain()
 
-	table, listOfTasks, err := d.ListAllTasks(i)
+	listOfTasks, err := d.GetAllTasks(i)
 	if err != nil {
 		return "", err
 	}
 
-	if len(listOfTasks) == 0 || table == nil {
+	if len(listOfTasks) == 0 {
 		fmt.Print(util.HideCursor)
 		fmt.Println(colors.Red + "    There is no open tasks, nothing to Delete yet!" + colors.Reset + "\n")
 		util.WaitForAnyKey(i, colors.Yellow+"Hit Any button to return to Menu"+colors.Reset)
@@ -42,7 +44,7 @@ func (d *DB) DeleteItem(i input.Input) (string, error) {
 
 		fmt.Println(colors.Yellow + colors.Bold + "Open tasks:" + colors.Reset)
 
-		table.Render()
+		PrintTasksAsTable(i.File(), &renderer, listOfTasks)
 
 	}
 

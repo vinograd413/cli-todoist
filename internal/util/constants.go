@@ -1,5 +1,7 @@
 package util
 
+import "cliTodoist/colors"
+
 const (
 	ShowCursor         = "\033[?25h"
 	HideCursor         = "\033[?25l"
@@ -17,3 +19,8 @@ var NavigationKeys = map[byte]bool{
 	MoveUp:   true,
 	MoveDown: true,
 }
+
+const SymbGreenCross = "❎"
+const SymbGreenCheck = "✅"
+
+var SymbRedCross = colors.Red + "✘" + colors.Reset

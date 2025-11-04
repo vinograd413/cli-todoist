@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"slices"
 	"time"
 )
 
@@ -22,4 +23,16 @@ func NewTask(text string) *Task {
 		-1,
 		false,
 		false}
+}
+
+func SortTasksByCreatedAt(tasks []*Task) {
+	slices.SortStableFunc(tasks, func(a, b *Task) int {
+		if a.CreatedAt < b.CreatedAt {
+			return -1
+		}
+		if a.CreatedAt > b.CreatedAt {
+			return 1
+		}
+		return 0
+	})
 }
