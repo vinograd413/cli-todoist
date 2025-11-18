@@ -21,3 +21,12 @@ func WaitForAnyKey(input input.Input, prompt string) {
 	input.ReadKey()
 	input.RestoreMode(state)
 }
+
+func RemoveFirst[T comparable](s []T, val T) []T {
+	for i, v := range s {
+		if v == val {
+			return append(s[:i], s[i+1:]...)
+		}
+	}
+	return s
+}

@@ -1,4 +1,4 @@
-package table
+package renderer
 
 import (
 	"os"
@@ -8,11 +8,12 @@ import (
 
 type AquaSecTableRenderer struct{}
 
-func (t *AquaSecTableRenderer) RenderTable(file *os.File, headers []string, rows [][]string) error {
+func (t *AquaSecTableRenderer) RenderTable(file *os.File, headers []string, rows [][]string) (int, error) {
 	table := table.New(file)
 	table.SetHeaders(headers...)
 	table.AddRows(rows...)
 
 	table.Render()
-	return nil
+
+	return table.RowCount(), nil
 }

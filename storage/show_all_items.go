@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"cliTodoist/colors"
+	"cliTodoist/internal/colors"
 	"cliTodoist/internal/input"
 	"cliTodoist/internal/table"
 	"cliTodoist/internal/util"
@@ -10,7 +10,6 @@ import (
 
 func (d *DB) ShowAllItems(i input.Input) error {
 	util.ClearScreen()
-	renderer := table.AquaSecTableRenderer{}
 
 	defer func() {
 		fmt.Print(util.ShowCursor)
@@ -23,8 +22,10 @@ func (d *DB) ShowAllItems(i input.Input) error {
 		return err
 	}
 
+	table := table.Table{Renderer: d.Renderer, TaskList: tasks}
+
 	if len(tasks) > 0 {
-		PrintTasksAsTable(i.File(), &renderer, tasks)
+		table.PrintTasksAsTable(i.File())
 	} else {
 		fmt.Println(colors.Red + "    There is no open tasks yet!" + colors.Reset + "\n")
 	}

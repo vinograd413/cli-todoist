@@ -1,9 +1,10 @@
 package storage
 
 import (
-	"cliTodoist/colors"
+	"cliTodoist/internal/colors"
 	"cliTodoist/internal/input"
 	"cliTodoist/internal/table"
+	"cliTodoist/internal/tasks"
 	"cliTodoist/internal/util"
 	"encoding/json"
 	"errors"
@@ -14,26 +15,27 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-func (d *DB) DeleteItem(i input.Input) (string, error) {
+func (d *DB) DeleteItem(i input.Input) (bool, error) {
 	var input string
 	var err error
 	var empty bool = false
 	var numbersToDelete []int
-	renderer := table.TableWriterRenderer{}
 
 	util.ClearScreenPlain()
 
 	listOfTasks, err := d.GetAllTasks(i)
 	if err != nil {
-		return "", err
+		return false, err
 	}
+
+	table := table.Table{Renderer: d.Renderer, TaskList: listOfTasks}
 
 	if len(listOfTasks) == 0 {
 		fmt.Print(util.HideCursor)
 		fmt.Println(colors.Red + "    There is no open tasks, nothing to Delete yet!" + colors.Reset + "\n")
 		util.WaitForAnyKey(i, colors.Yellow+"Hit Any button to return to Menu"+colors.Reset)
 		fmt.Print(util.ShowCursor)
-		return "", nil
+		return false, nil
 	} else {
 		fmt.Println(colors.Yellow + colors.Bold + "Which task you want to delete?" + colors.Reset)
 		fmt.Println(colors.Gray +
@@ -44,24 +46,22 @@ func (d *DB) DeleteItem(i input.Input) (string, error) {
 
 		fmt.Println(colors.Yellow + colors.Bold + "Open tasks:" + colors.Reset)
 
-		PrintTasksAsTable(i.File(), &renderer, listOfTasks)
+		table.PrintTasksAsTable(i.File())
 
 	}
 
 	for {
 		input, err = i.ReadLine(colors.Yellow + "Enter numbers: " + colors.Reset)
 		if err != nil {
-			return "", err
+			return false, err
 		}
 		if inputLen := len(input); inputLen == 0 {
 			if empty {
-				for i := 0; i < 5; i++ {
+				for i := 0; i < 2; i++ {
 					fmt.Printf("\033[2K\033[1A")
 				}
 			} else {
-				for i := 0; i < 4; i++ {
-					fmt.Printf("\033[2K\033[1A")
-				}
+				fmt.Printf("\033[2K\033[1A")
 			}
 			fmt.Printf("\033[2K\r")
 			fmt.Println(colors.Red +
@@ -69,7 +69,7 @@ func (d *DB) DeleteItem(i input.Input) (string, error) {
 				colors.Reset)
 			empty = true
 		} else if input == "e" {
-			return "", nil
+			return false, nil
 		} else {
 			var inputErr error
 			var n int
@@ -83,26 +83,22 @@ func (d *DB) DeleteItem(i input.Input) (string, error) {
 			}
 			if inputErr != nil {
 				if empty {
-					for i := 0; i < 5; i++ {
+					for i := 0; i < 2; i++ {
 						fmt.Printf("\033[2K\033[1A")
 					}
 				} else {
-					for i := 0; i < 4; i++ {
-						fmt.Printf("\033[2K\033[1A")
-					}
+					fmt.Printf("\033[2K\033[1A")
 				}
 				fmt.Printf("\033[2K\r")
 				fmt.Println(colors.Red + "You should enter a valid number" + colors.Reset)
 				empty = true
 			} else if len(listOfTasks) < n {
 				if empty {
-					for i := 0; i < 5; i++ {
+					for i := 0; i < 2; i++ {
 						fmt.Printf("\033[2K\033[1A")
 					}
 				} else {
-					for i := 0; i < 4; i++ {
-						fmt.Printf("\033[2K\033[1A")
-					}
+					fmt.Printf("\033[2K\033[1A")
 				}
 				fmt.Printf("\033[2K\r")
 				fmt.Println(colors.Red + "You should enter only existing numbers of tasks" + colors.Reset)
@@ -113,7 +109,7 @@ func (d *DB) DeleteItem(i input.Input) (string, error) {
 		}
 	}
 
-	var taskToDelete *Task
+	var taskToDelete *tasks.Task
 	for _, v := range numbersToDelete {
 		taskToDelete = listOfTasks[v-1]
 		taskToDelete.IsDeleted = true
@@ -135,27 +131,76 @@ func (d *DB) DeleteItem(i input.Input) (string, error) {
 		})
 
 		if err != nil {
-			return "", err
+			return false, err
 		}
 	}
 
 	fmt.Println(colors.Green + "Task deleted successfully!")
 
-	for {
+	return util.AskRepeatOperation(i, "delete")
+}
 
-		input, err = i.ReadLine(colors.Yellow + "Do you want to delete another task (Y/N): ")
-		if err != nil {
-			return "", err
-		}
-		if inputLen := len(input); inputLen != 0 {
-			ls := strings.ToLower(input)
-			answer := ls[:1]
-			if answer == "y" {
-				return "y", nil
-			} else {
-				return "n", nil
+func (d *DB) DeleteItemInteractive(i input.Input) (bool, error) {
+	var err error
+
+	util.ClearScreen()
+
+	defer func() {
+		fmt.Print(util.ShowCursor)
+	}()
+
+	listOfTasks, err := d.GetAllTasks(i)
+	if err != nil {
+		return false, err
+	}
+
+	if len(listOfTasks) == 0 {
+		fmt.Print(util.HideCursor)
+		fmt.Println(colors.Red + "    There is no open tasks, nothing to Delete yet!" + colors.Reset + "\n")
+		util.WaitForAnyKey(i, colors.Yellow+"Hit Any button to return to Menu"+colors.Reset)
+		fmt.Print(util.ShowCursor)
+		return false, nil
+	} else {
+		fmt.Println(colors.Yellow + colors.Bold + "Which task you want to delete?" + colors.Reset)
+		fmt.Println(util.NavigationPromptDeletion)
+	}
+
+	table := table.Table{Renderer: d.Renderer, TaskList: listOfTasks}
+
+	err = table.DisplayTable(i)
+	if err != nil {
+		return false, err
+	}
+
+	if len(table.SelectedTasks) == 0 {
+		return false, nil
+	}
+
+	for _, taskToDelete := range table.SelectedTasks {
+		taskToDelete.IsDeleted = true
+
+		err := d.db.Update(func(tx *bbolt.Tx) error {
+			b := tx.Bucket([]byte(tasksBucket))
+			if b == nil {
+				return errors.New("Bucket does not exists")
 			}
+
+			buf, err := json.Marshal(taskToDelete)
+			if err != nil {
+				return err
+			}
+
+			err = b.Put(taskToDelete.ID, buf)
+
+			return err
+		})
+
+		if err != nil {
+			return false, err
 		}
 	}
 
+	fmt.Println(colors.Green + "Task deleted successfully!")
+
+	return util.AskRepeatOperation(i, "delete")
 }

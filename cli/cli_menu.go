@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"cliTodoist/colors"
+	"cliTodoist/internal/colors"
 	"cliTodoist/internal/input"
 	"cliTodoist/internal/util"
 	"errors"

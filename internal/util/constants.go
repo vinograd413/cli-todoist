@@ -1,6 +1,6 @@
 package util
 
-import "cliTodoist/colors"
+import "cliTodoist/internal/colors"
 
 const (
 	ShowCursor         = "\033[?25h"
@@ -13,6 +13,7 @@ const (
 	MoveDown = byte(66)
 	Enter    = byte(13)
 	Escape   = byte(27)
+	Space    = byte(32)
 )
 
 var NavigationKeys = map[byte]bool{
@@ -23,4 +24,6 @@ var NavigationKeys = map[byte]bool{
 const SymbGreenCross = "❎"
 const SymbGreenCheck = "✅"
 
+var CursorSelection = colors.Yellow + "➤  " + colors.Reset
 var SymbRedCross = colors.Red + "✘" + colors.Reset
+var CursorSelectionDeletion = colors.Yellow + "➤ " + SymbRedCross

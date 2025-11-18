@@ -1,51 +1,52 @@
 package storage
 
 import (
-	"cliTodoist/colors"
+	"cliTodoist/internal/colors"
 	"cliTodoist/internal/input"
 	"cliTodoist/internal/table"
+	"cliTodoist/internal/tasks"
 	"cliTodoist/internal/util"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"go.etcd.io/bbolt"
 )
 
-func (d *DB) UpdateItem(i input.Input) (string, error) {
+func (d *DB) UpdateItem(i input.Input) (bool, error) {
 	var input string
 	var empty bool = false
 	var numToDelete int
-	var taskToUpdate *Task
-	renderer := table.TableWriterRenderer{}
+	var taskToUpdate *tasks.Task
 
 	util.ClearScreenPlain()
 
 	listOfTasks, err := d.GetAllTasks(i)
 	if err != nil {
-		return "", err
+		return false, err
 	}
+
+	table := table.Table{Renderer: d.Renderer, TaskList: listOfTasks}
 
 	if len(listOfTasks) == 0 {
 		fmt.Print(util.HideCursor)
 		fmt.Println(colors.Red + "    There is no open tasks, nothing to Update yet!" + colors.Reset + "\n")
 		util.WaitForAnyKey(i, colors.Yellow+"Hit Any button to return to Menu"+colors.Reset)
 		fmt.Print(util.ShowCursor)
-		return "", nil
+		return false, nil
 	} else {
 		fmt.Println(colors.Yellow + colors.Bold + "Which task you want to update?" + colors.Reset)
 		fmt.Println(colors.Gray + "Print" + colors.Yellow + " 'e' " + colors.Gray + "to navigate back to Menu\n" + colors.Reset)
 		fmt.Println(colors.Yellow + colors.Bold + "Open tasks:" + colors.Reset)
-		PrintTasksAsTable(i.File(), &renderer, listOfTasks)
+		table.PrintTasksAsTable(i.File())
 	}
 
 	for {
 
 		input, err := i.ReadLine(colors.Yellow + "Enter number: " + colors.Reset)
 		if err != nil {
-			return "", err
+			return false, err
 		}
 		if inputLen := len(input); inputLen == 0 {
 			if empty {
@@ -63,7 +64,7 @@ func (d *DB) UpdateItem(i input.Input) (string, error) {
 				colors.Reset)
 			empty = true
 		} else if input == "e" {
-			return "", nil
+			return false, nil
 		} else {
 			var inputErr error
 			numToDelete, inputErr = strconv.Atoi(input)
@@ -112,10 +113,10 @@ func (d *DB) UpdateItem(i input.Input) (string, error) {
 
 		input, err := i.ReadLine(colors.Yellow + "Enter new header: " + colors.Reset)
 		if err != nil {
-			return "", err
+			return false, err
 		}
 		if input == "e" {
-			return "", nil
+			return false, nil
 		} else if inputLen := len(input); inputLen <= minHeaderLen {
 			fmt.Println(colors.Red +
 				fmt.Sprintf("Your header for task should be longer %d chars!", minHeaderLen) +
@@ -144,25 +145,10 @@ func (d *DB) UpdateItem(i input.Input) (string, error) {
 	})
 
 	if err != nil {
-		return "", err
+		return false, err
 	}
 
 	fmt.Println(colors.Green + "Task updated successfully!")
 
-	for {
-
-		input, err = i.ReadLine(colors.Yellow + "Do you want to update another task (Y/N): ")
-		if err != nil {
-			return "", err
-		}
-		if inputLen := len(input); inputLen != 0 {
-			ls := strings.ToLower(input)
-			answer := ls[:1]
-			if answer == "y" {
-				return "y", nil
-			} else {
-				return "n", nil
-			}
-		}
-	}
+	return util.AskRepeatOperation(i, "update")
 }

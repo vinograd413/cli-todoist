@@ -1,8 +1,9 @@
 package cli
 
 import (
-	"cliTodoist/colors"
+	"cliTodoist/internal/colors"
 	"cliTodoist/internal/input"
+	"cliTodoist/internal/renderer"
 	"cliTodoist/internal/util"
 	"cliTodoist/storage"
 	"crypto/sha256"
@@ -28,7 +29,7 @@ func (cli *CLI) validateArgs() {
 }
 
 func (cli *CLI) Run() error {
-	db, err := storage.NewDB()
+	db, err := storage.NewDB(&renderer.TableWriterRenderer{})
 	if err != nil {
 		return err
 	}
@@ -36,12 +37,20 @@ func (cli *CLI) Run() error {
 	menu := NewMenu(colors.Bold +
 		colors.Yellow +
 		"Please select type of operation you want to do with Todoist?\n" +
-		"\rUse ↑/↓ to navigate, Enter to select, Esc to exit:\n" +
+		colors.Reset + util.NavigationPrompt +
 		colors.Reset)
+
+	deleteMenu := NewMenu(colors.Bold +
+		colors.Yellow +
+		"Select type of interaction\n" +
+		colors.Reset + util.NavigationPrompt +
+		colors.Reset)
+	deleteMenu.AddItem("Normal", StringToID("Delete task Normal"), nil)
+	deleteMenu.AddItem("Interactive", StringToID("Delete task Interactive"), nil)
 
 	menu.AddItem("Add task", StringToID("Add task"), nil)
 	menu.AddItem("Update task", StringToID("Update task"), nil)
-	menu.AddItem("Delete task", StringToID("Delete task"), nil)
+	menu.AddItem("Delete task", StringToID("Delete task"), deleteMenu)
 	menu.AddItem("List all task", StringToID("List all task"), nil)
 
 	// Channel to signal interrupt
@@ -78,6 +87,7 @@ func ShowMenu(m *Menu, db *storage.DB, input input.Input) error {
 	for _, v := range m.MenuItems {
 		if itemID == v.ID && v.SubMenu != nil {
 			input.RestoreMode(oldState)
+			itemID = ""
 			ShowMenu(v.SubMenu, db, input)
 		}
 	}
@@ -91,7 +101,7 @@ func ShowMenu(m *Menu, db *storage.DB, input input.Input) error {
 			if err != nil {
 				return err
 			}
-			if response != "y" {
+			if !response {
 				break
 			}
 		}
@@ -101,17 +111,28 @@ func ShowMenu(m *Menu, db *storage.DB, input input.Input) error {
 			if err != nil {
 				return err
 			}
-			if response != "y" {
+
+			if !response {
 				break
 			}
 		}
-	case StringToID("Delete task"):
+	case StringToID("Delete task Normal"):
 		for {
 			response, err := db.DeleteItem(input)
 			if err != nil {
 				return err
 			}
-			if response != "y" {
+			if !response {
+				break
+			}
+		}
+	case StringToID("Delete task Interactive"):
+		for {
+			response, err := db.DeleteItemInteractive(input)
+			if err != nil {
+				return err
+			}
+			if !response {
 				break
 			}
 		}
