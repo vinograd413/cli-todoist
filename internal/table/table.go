@@ -72,6 +72,52 @@ func (t *Table) DisplayTable(i input.Input) error {
 	}
 }
 
+func (t *Table) DisplayTableSingleSelection(i input.Input) error {
+	var err error
+
+	tableLines, err := t.PrintTasksAsTableWithSelection(i.File())
+	if err != nil {
+		return err
+	}
+
+	oldState, err := i.SetRawMode()
+	if err != nil {
+		return err
+	}
+
+	for {
+		keyInput, err := i.ReadKey()
+		if err != nil {
+			return err
+		}
+		switch keyInput {
+		case util.MoveUp:
+			if t.CursorPosition > 0 {
+				t.CursorPosition--
+			}
+		case util.MoveDown:
+			if t.CursorPosition < len(t.TaskList)-1 {
+				t.CursorPosition++
+			}
+		case util.Enter:
+			t.SelectedTasks = append(t.SelectedTasks, t.TaskList[t.CursorPosition])
+			i.RestoreMode(oldState)
+			return nil
+		case util.Escape:
+			i.RestoreMode(oldState)
+			t.SelectedTasks = nil
+			return nil
+		}
+		i.RestoreMode(oldState)
+		fmt.Printf(util.CursorUpFormat, tableLines)
+		tableLines, err = t.PrintTasksAsTableWithSelection(i.File())
+		oldState, err = i.SetRawMode()
+		if err != nil {
+			return err
+		}
+	}
+}
+
 func (t *Table) PrintTasksAsTableWithSelection(file *os.File) (int, error) {
 	header := []string{"#", "Text", "Created At", "Completed", "Completed At"}
 	var rows [][]string
@@ -93,7 +139,7 @@ func (t *Table) PrintTasksAsTableWithSelection(file *os.File) (int, error) {
 		row = append(row, cursor+bgColor+strconv.Itoa(i+1)+colors.Reset)
 		row = append(row, bgColor+task.Text+colors.Reset)
 		row = append(row, bgColor+time.Unix(task.CreatedAt, 0).Format(time.RFC1123)+colors.Reset)
-		if !task.IsComleted {
+		if !task.IsCompleted {
 			row = append(row, util.SymbGreenCross)
 			row = append(row, "")
 		}
@@ -111,7 +157,7 @@ func (t *Table) PrintTasksAsTable(file *os.File) (int, error) {
 		row = append(row, strconv.Itoa(i+1))
 		row = append(row, task.Text)
 		row = append(row, time.Unix(task.CreatedAt, 0).Format(time.RFC1123))
-		if !task.IsComleted {
+		if !task.IsCompleted {
 			row = append(row, util.SymbGreenCross)
 			row = append(row, "")
 		}

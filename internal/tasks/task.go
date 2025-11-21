@@ -7,12 +7,12 @@ import (
 )
 
 type Task struct {
-	ID         []byte
-	Text       string
-	CreatedAt  int64
-	ComletedAt int64
-	IsDeleted  bool
-	IsComleted bool
+	ID          []byte
+	Text        string
+	CreatedAt   int64
+	CompletedAt int64
+	IsDeleted   bool
+	IsCompleted bool
 }
 
 func NewTask(text string) *Task {

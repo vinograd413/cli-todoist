@@ -200,7 +200,7 @@ func (d *DB) DeleteItemInteractive(i input.Input) (bool, error) {
 		}
 	}
 
-	fmt.Println(colors.Green + "Task deleted successfully!")
+	fmt.Println(colors.Green + "Task(s) deleted successfully!")
 
 	return util.AskRepeatOperation(i, "delete")
 }

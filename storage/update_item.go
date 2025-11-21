@@ -152,3 +152,93 @@ func (d *DB) UpdateItem(i input.Input) (bool, error) {
 
 	return util.AskRepeatOperation(i, "update")
 }
+
+func (d *DB) UpdateItemInteractive(i input.Input) (bool, error) {
+	var input string
+	var err error
+	var taskToUpdate *tasks.Task
+
+	util.ClearScreen()
+
+	defer func() {
+		fmt.Print(util.ShowCursor)
+	}()
+
+	listOfTasks, err := d.GetAllTasks(i)
+	if err != nil {
+		return false, err
+	}
+
+	if len(listOfTasks) == 0 {
+		fmt.Print(util.HideCursor)
+		fmt.Println(colors.Red + "    There is no open tasks, nothing to Update yet!" + colors.Reset + "\n")
+		util.WaitForAnyKey(i, colors.Yellow+"Hit Any button to return to Menu"+colors.Reset)
+		fmt.Print(util.ShowCursor)
+		return false, nil
+	} else {
+		fmt.Println(colors.Yellow + colors.Bold + "Which task you want to update?" + colors.Reset)
+		fmt.Println(util.NavigationPrompt)
+	}
+
+	table := table.Table{Renderer: d.Renderer, TaskList: listOfTasks}
+
+	err = table.DisplayTableSingleSelection(i)
+	if err != nil {
+		return false, err
+	}
+
+	if len(table.SelectedTasks) == 0 {
+		return false, nil
+	}
+
+	taskToUpdate = table.SelectedTasks[0]
+
+	util.ClearScreenPlain()
+	fmt.Println(colors.Yellow + colors.Bold + "Update task" + colors.Reset)
+	fmt.Println(colors.Yellow + "Task header: " + colors.Reset + colors.Gray + taskToUpdate.Text + colors.Reset)
+
+	for {
+		fmt.Println(colors.Yellow + colors.Bold + "Print 'e' to navigate back to Menu" + colors.Reset)
+		fmt.Print()
+
+		input, err := i.ReadLine(colors.Yellow + "Enter new header: " + colors.Reset)
+		if err != nil {
+			return false, err
+		}
+		if input == "e" {
+			return false, nil
+		} else if inputLen := len(input); inputLen <= minHeaderLen {
+			fmt.Println(colors.Red +
+				fmt.Sprintf("Your header for task should be longer %d chars!", minHeaderLen) +
+				colors.Reset)
+		} else {
+			break
+		}
+	}
+
+	taskToUpdate.Text = input
+
+	err = d.db.Update(func(tx *bbolt.Tx) error {
+		b := tx.Bucket([]byte(tasksBucket))
+		if b == nil {
+			return errors.New("Bucket does not exists")
+		}
+
+		buf, err := json.Marshal(taskToUpdate)
+		if err != nil {
+			return err
+		}
+
+		err = b.Put(taskToUpdate.ID, buf)
+
+		return err
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	fmt.Println(colors.Green + "Task updated successfully!")
+
+	return util.AskRepeatOperation(i, "update")
+}
