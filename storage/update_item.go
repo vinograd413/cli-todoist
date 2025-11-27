@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"go.etcd.io/bbolt"
 )
@@ -111,7 +112,7 @@ func (d *DB) UpdateItem(i input.Input) (bool, error) {
 		fmt.Println(colors.Yellow + colors.Bold + "Print 'e' to navigate back to Menu" + colors.Reset)
 		fmt.Print()
 
-		input, err := i.ReadLine(colors.Yellow + "Enter new header: " + colors.Reset)
+		input, err = i.ReadLine(colors.Yellow + "Enter new header: " + colors.Reset)
 		if err != nil {
 			return false, err
 		}
@@ -198,10 +199,10 @@ func (d *DB) UpdateItemInteractive(i input.Input) (bool, error) {
 	fmt.Println(colors.Yellow + "Task header: " + colors.Reset + colors.Gray + taskToUpdate.Text + colors.Reset)
 
 	for {
-		fmt.Println(colors.Yellow + colors.Bold + "Print 'e' to navigate back to Menu" + colors.Reset)
+		fmt.Println(util.PromptBackToMenu)
 		fmt.Print()
 
-		input, err := i.ReadLine(colors.Yellow + "Enter new header: " + colors.Reset)
+		input, err = i.ReadLine(colors.Yellow + "Enter new header: " + colors.Reset)
 		if err != nil {
 			return false, err
 		}
@@ -239,6 +240,72 @@ func (d *DB) UpdateItemInteractive(i input.Input) (bool, error) {
 	}
 
 	fmt.Println(colors.Green + "Task updated successfully!")
+
+	return util.AskRepeatOperation(i, "update")
+}
+
+func (d *DB) UpdateStatus(i input.Input) (bool, error) {
+	var err error
+
+	util.ClearScreen()
+
+	defer func() {
+		fmt.Print(util.ShowCursor)
+	}()
+
+	listOfTasks, err := d.GetAllTasks(i)
+	if err != nil {
+		return false, err
+	}
+
+	if len(listOfTasks) == 0 {
+		fmt.Print(util.HideCursor)
+		fmt.Println(colors.Red + "    There is no open tasks, nothing to Update yet!" + colors.Reset + "\n")
+		util.WaitForAnyKey(i, colors.Yellow+"Hit Any button to return to Menu"+colors.Reset)
+		fmt.Print(util.ShowCursor)
+		return false, nil
+	} else {
+		fmt.Println(colors.Yellow + colors.Bold + "Which status you want to change?" + colors.Reset)
+		fmt.Println(util.NavigationPromptUpdateStatus)
+	}
+
+	table := table.Table{Renderer: d.Renderer, TaskList: listOfTasks}
+
+	err = table.DisplayTable(i)
+	if err != nil {
+		return false, err
+	}
+
+	if len(table.SelectedTasks) == 0 {
+		return false, nil
+	}
+
+	for _, taskToUpdate := range table.SelectedTasks {
+		taskToUpdate.IsCompleted = !taskToUpdate.IsCompleted
+		taskToUpdate.CompletedAt = time.Now().Unix()
+
+		err := d.db.Update(func(tx *bbolt.Tx) error {
+			b := tx.Bucket([]byte(tasksBucket))
+			if b == nil {
+				return errors.New("Bucket does not exists")
+			}
+
+			buf, err := json.Marshal(taskToUpdate)
+			if err != nil {
+				return err
+			}
+
+			err = b.Put(taskToUpdate.ID, buf)
+
+			return err
+		})
+
+		if err != nil {
+			return false, err
+		}
+	}
+
+	fmt.Println(colors.Green + "Task(s) updated successfully!")
 
 	return util.AskRepeatOperation(i, "update")
 }

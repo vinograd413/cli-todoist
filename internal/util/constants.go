@@ -26,4 +26,5 @@ const SymbGreenCheck = "✅"
 
 var CursorSelection = colors.Yellow + "➤  " + colors.Reset
 var SymbRedCross = colors.Red + "✘" + colors.Reset
+var SymbGreenSimleCheck = colors.Green + "✔" + colors.Reset
 var CursorSelectionDeletion = colors.Yellow + "➤ " + SymbRedCross

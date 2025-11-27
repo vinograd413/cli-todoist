@@ -138,10 +138,13 @@ func (t *Table) PrintTasksAsTableWithSelection(file *os.File) (int, error) {
 		var row []string
 		row = append(row, cursor+bgColor+strconv.Itoa(i+1)+colors.Reset)
 		row = append(row, bgColor+task.Text+colors.Reset)
-		row = append(row, bgColor+time.Unix(task.CreatedAt, 0).Format(time.RFC1123)+colors.Reset)
+		row = append(row, bgColor+time.Unix(task.CreatedAt, 0).Format(time.DateTime)+colors.Reset)
 		if !task.IsCompleted {
-			row = append(row, util.SymbGreenCross)
+			row = append(row, util.SymbRedCross)
 			row = append(row, "")
+		} else {
+			row = append(row, util.SymbGreenSimleCheck)
+			row = append(row, bgColor+time.Unix(task.CompletedAt, 0).Format(time.DateTime)+colors.Reset)
 		}
 		rows = append(rows, row)
 	}
@@ -156,10 +159,13 @@ func (t *Table) PrintTasksAsTable(file *os.File) (int, error) {
 		var row []string
 		row = append(row, strconv.Itoa(i+1))
 		row = append(row, task.Text)
-		row = append(row, time.Unix(task.CreatedAt, 0).Format(time.RFC1123))
+		row = append(row, time.Unix(task.CreatedAt, 0).Format(time.DateTime))
 		if !task.IsCompleted {
-			row = append(row, util.SymbGreenCross)
+			row = append(row, util.SymbRedCross)
 			row = append(row, "")
+		} else {
+			row = append(row, util.SymbGreenSimleCheck)
+			row = append(row, time.Unix(task.CompletedAt, 0).Format(time.DateTime))
 		}
 		rows = append(rows, row)
 	}

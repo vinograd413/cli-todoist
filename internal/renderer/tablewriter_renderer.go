@@ -13,7 +13,9 @@ func (t *TableWriterRenderer) RenderTable(file *os.File, headers []string, rows 
 	table := tablewriter.NewWriter(file)
 	table.Options(tablewriter.WithLineCounter())
 	table.Configure(func(cfg *tablewriter.Config) {
-		cfg.Row.Formatting = tw.CellFormatting{AutoWrap: tw.WrapNormal}
+		cfg.Row.Formatting = tw.CellFormatting{AutoWrap: tw.WrapTruncate, Alignment: tw.AlignLeft}
+		// cfg.Row.Formatting.AutoFormat = tw.Success
+		cfg.Row.ColMaxWidths = tw.CellWidth{Global: 50}
 		cfg.Behavior.TrimSpace = tw.Fail
 	})
 	table.Header(headers)

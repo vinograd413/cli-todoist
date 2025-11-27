@@ -13,4 +13,10 @@ var NavigationPromptDeletion string = colors.Gray +
 	colors.Yellow + "Enter" + colors.Gray + " to delete selected tasks, " +
 	colors.Yellow + "Esc" + colors.Gray + " to exit:\n" + colors.Reset
 
+var NavigationPromptUpdateStatus string = colors.Gray +
+	"\rUse " + colors.Yellow + "↑/↓" + colors.Gray + " to navigate, " +
+	colors.Yellow + "Space" + colors.Gray + " to select items, " +
+	colors.Yellow + "Enter" + colors.Gray + " to update status of tasks, " +
+	colors.Yellow + "Esc" + colors.Gray + " to exit:\n" + colors.Reset
+
 var PromptBackToMenu string = colors.Gray + "Print" + colors.Yellow + " 'e' " + colors.Gray + "to navigate back to Menu\n" + colors.Reset

@@ -49,12 +49,20 @@ func (cli *CLI) Run() error {
 	deleteMenu.AddItem("Interactive", StringToID("Delete task Interactive"), nil)
 
 	updateMenu := NewMenu(colors.Bold +
+		colors.Yellow + "What do you want to update?\n" +
+		colors.Reset + util.NavigationPrompt +
+		colors.Reset)
+
+	updateMenuHeader := NewMenu(colors.Bold +
 		colors.Yellow +
 		"Select type of interaction\n" +
 		colors.Reset + util.NavigationPrompt +
 		colors.Reset)
-	updateMenu.AddItem("Normal", StringToID("Update task Normal"), nil)
-	updateMenu.AddItem("Interactive", StringToID("Update task Interactive"), nil)
+	updateMenuHeader.AddItem("Normal", StringToID("Update task Normal"), nil)
+	updateMenuHeader.AddItem("Interactive", StringToID("Update task Interactive"), nil)
+
+	updateMenu.AddItem("Header", StringToID("Update header"), updateMenuHeader)
+	updateMenu.AddItem("Status", StringToID("Update status"), nil)
 
 	menu.AddItem("Add task", StringToID("Add task"), nil)
 	menu.AddItem("Update task", StringToID("Update task"), updateMenu)
@@ -131,6 +139,16 @@ func ShowMenu(m *Menu, db *storage.DB, input input.Input) error {
 				return err
 			}
 
+			if !response {
+				break
+			}
+		}
+	case StringToID("Update status"):
+		for {
+			response, err := db.UpdateStatus(input)
+			if err != nil {
+				return err
+			}
 			if !response {
 				break
 			}

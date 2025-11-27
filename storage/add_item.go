@@ -20,7 +20,7 @@ func (d *DB) AddItem(i input.Input) (bool, error) {
 	util.ClearScreenPlain()
 	fmt.Println(colors.Yellow + colors.Bold + "Add new task" + colors.Reset)
 	fmt.Println(colors.Gray + "Enter header for your new TO DO item" + colors.Reset)
-	fmt.Println(colors.Gray + "Print" + colors.Yellow + " 'e' " + colors.Gray + "to navigate back to Menu\n" + colors.Reset)
+	fmt.Println(util.PromptBackToMenu)
 	for {
 		input, err := i.ReadLine(colors.Yellow + "Enter header: " + colors.Reset)
 		if err != nil {

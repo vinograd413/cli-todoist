@@ -8,7 +8,7 @@ import (
 
 func AskRepeatOperation(i input.Input, action string) (bool, error) {
 	for {
-		response, err := i.ReadLine(colors.Yellow + "Do you want to delete another task (Y/N): ")
+		response, err := i.ReadLine(colors.Yellow + "Do you want to " + action + " another task (Y/N): " + colors.Reset)
 		if err != nil {
 			return false, err
 		}
