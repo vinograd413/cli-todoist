@@ -83,6 +83,7 @@ func (m *Menu) renderMenu(redraw bool) {
 	menuSize := len(m.MenuItems)
 	if redraw {
 		fmt.Printf(util.CursorUpFormat, menuSize)
+		fmt.Print(util.ClearDown)
 	}
 	cursor := "  "
 	select_cursor := colors.Yellow + "> " + colors.Reset

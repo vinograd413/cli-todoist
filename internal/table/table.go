@@ -21,10 +21,11 @@ type Table struct {
 	SelectedTasks  []*tasks.Task
 }
 
-func (t *Table) DisplayTable(i input.Input) error {
+func (t *Table) DisplayTableMultiSelection(i input.Input) error {
 	var err error
+	var tableLines int
 
-	tableLines, err := t.PrintTasksAsTableWithSelection(i.File())
+	tableLines, err = t.PrintTasksAsTableWithSelection(i.File())
 	if err != nil {
 		return err
 	}
@@ -64,6 +65,7 @@ func (t *Table) DisplayTable(i input.Input) error {
 		}
 		i.RestoreMode(oldState)
 		fmt.Printf(util.CursorUpFormat, tableLines)
+		fmt.Print(util.ClearDown)
 		tableLines, err = t.PrintTasksAsTableWithSelection(i.File())
 		oldState, err = i.SetRawMode()
 		if err != nil {
@@ -74,8 +76,9 @@ func (t *Table) DisplayTable(i input.Input) error {
 
 func (t *Table) DisplayTableSingleSelection(i input.Input) error {
 	var err error
+	var tableLines int
 
-	tableLines, err := t.PrintTasksAsTableWithSelection(i.File())
+	tableLines, err = t.PrintTasksAsTableWithSelection(i.File())
 	if err != nil {
 		return err
 	}
@@ -110,6 +113,7 @@ func (t *Table) DisplayTableSingleSelection(i input.Input) error {
 		}
 		i.RestoreMode(oldState)
 		fmt.Printf(util.CursorUpFormat, tableLines)
+		fmt.Print(util.ClearDown)
 		tableLines, err = t.PrintTasksAsTableWithSelection(i.File())
 		oldState, err = i.SetRawMode()
 		if err != nil {
@@ -121,22 +125,36 @@ func (t *Table) DisplayTableSingleSelection(i input.Input) error {
 func (t *Table) PrintTasksAsTableWithSelection(file *os.File) (int, error) {
 	header := []string{"#", "Text", "Created At", "Completed", "Completed At"}
 	var rows [][]string
-	for i, task := range t.TaskList {
+	var maxRow int
+
+	pageNum := (t.CursorPosition / util.MaxTableHeight)
+	pageCursorPosition := t.CursorPosition % util.MaxTableHeight
+
+	if len(t.TaskList)/util.MaxTableHeight > pageNum {
+		maxRow = pageNum*util.MaxTableHeight + util.MaxTableHeight
+	} else {
+		maxRow = len(t.TaskList)
+	}
+
+	pageTasks := t.TaskList[pageNum*util.MaxTableHeight : maxRow]
+
+	for i, task := range pageTasks {
 		var bgColor string
 		var cursor string = "   "
 
-		if slices.Contains(t.SelectedTasks, task) && i != t.CursorPosition {
+		if slices.Contains(t.SelectedTasks, task) && i != pageCursorPosition {
 			cursor = "  " + util.SymbRedCross
-		} else if slices.Contains(t.SelectedTasks, task) && i == t.CursorPosition {
+		} else if slices.Contains(t.SelectedTasks, task) && i == pageCursorPosition {
 			bgColor = colors.SetBackgroundColor(240)
 			cursor = util.CursorSelectionDeletion
-		} else if !slices.Contains(t.SelectedTasks, task) && i == t.CursorPosition {
+		} else if !slices.Contains(t.SelectedTasks, task) && i == pageCursorPosition {
 			bgColor = colors.SetBackgroundColor(240)
 			cursor = util.CursorSelection
 		}
 
 		var row []string
-		row = append(row, cursor+bgColor+strconv.Itoa(i+1)+colors.Reset)
+		taskNumber := i + 1 + (util.MaxTableHeight * pageNum)
+		row = append(row, cursor+bgColor+strconv.Itoa(taskNumber)+colors.Reset)
 		row = append(row, bgColor+task.Text+colors.Reset)
 		row = append(row, bgColor+time.Unix(task.CreatedAt, 0).Format(time.DateTime)+colors.Reset)
 		if !task.IsCompleted {
@@ -147,6 +165,11 @@ func (t *Table) PrintTasksAsTableWithSelection(file *os.File) (int, error) {
 			row = append(row, bgColor+time.Unix(task.CompletedAt, 0).Format(time.DateTime)+colors.Reset)
 		}
 		rows = append(rows, row)
+	}
+
+	if len(t.TaskList)/util.MaxTableHeight > pageNum {
+		lastRow := []string{"", "...", "", "", ""}
+		rows = append(rows, lastRow)
 	}
 
 	return t.Renderer.RenderTable(file, header, rows)

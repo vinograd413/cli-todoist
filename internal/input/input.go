@@ -21,6 +21,10 @@ type Input interface {
 	Fd() int
 	//File return file descriptor
 	File() *os.File
+	//Get height of terminal window
+	GetHeight() (int, error)
+	//Get widht of terminal window
+	GetWidth() (int, error)
 }
 
 type TerminalInput struct {
@@ -68,4 +72,20 @@ func (ti *TerminalInput) SetRawMode() (*term.State, error) {
 func (ti *TerminalInput) RestoreMode(state *term.State) error {
 	fd := int(ti.file.Fd())
 	return term.Restore(fd, state)
+}
+
+func (ti TerminalInput) GetHeight() (int, error) {
+	_, h, err := term.GetSize(ti.Fd())
+	if err != nil {
+		return 0, err
+	}
+	return h, nil
+}
+
+func (ti TerminalInput) GetWidth() (int, error) {
+	w, _, err := term.GetSize(ti.Fd())
+	if err != nil {
+		return 0, err
+	}
+	return w, nil
 }

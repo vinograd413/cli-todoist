@@ -21,13 +21,6 @@ type CLI struct {
 	Input input.Input
 }
 
-func (cli *CLI) validateArgs() {
-	// fmt.Fprintln(os.Stdout, os.Args[0])
-	bg := colors.SetBackgroundColor(100)
-	fmt.Fprintf(os.Stdout, bg+"Value: %s \n", os.Args[0])
-	// fmt.Printf("\033[%dA", 7)
-}
-
 func (cli *CLI) Run() error {
 	db, err := storage.NewDB(&renderer.TableWriterRenderer{})
 	if err != nil {
@@ -176,7 +169,7 @@ func ShowMenu(m *Menu, db *storage.DB, input input.Input) error {
 	case StringToID("List all task"):
 		db.ShowAllItems(input)
 	case "exit":
-		return errors.New("Exit error")
+		return errors.New("Exit application")
 	}
 
 	return nil

@@ -271,7 +271,7 @@ func (d *DB) UpdateStatus(i input.Input) (bool, error) {
 
 	table := table.Table{Renderer: d.Renderer, TaskList: listOfTasks}
 
-	err = table.DisplayTable(i)
+	err = table.DisplayTableMultiSelection(i)
 	if err != nil {
 		return false, err
 	}
